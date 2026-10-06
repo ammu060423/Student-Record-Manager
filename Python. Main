@@ -1,0 +1,78 @@
+import re
+import json
+import os
+
+# Regex for email validation
+EMAIL_REGEX = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+DATA_FILE = "students.json"
+
+class InvalidEmailException(Exception):
+    pass
+
+class InvalidInputException(Exception):
+    pass
+
+class Student:
+    def __init__(self, roll_no, name, email, course):
+        self.roll_no = roll_no
+        self.name = name
+        self.email = email
+        self.course = course
+
+    def to_dict(self):
+        return {
+            "roll_no": self.roll_no,
+            "name": self.name,
+            "email": self.email,
+            "course": self.course
+        }
+
+def validate_email(email):
+    """Validate Email using Regex"""
+    if not re.match(EMAIL_REGEX, email):
+        raise InvalidEmailException(f"Invalid email format: {email}")
+    return True
+
+def validate_input(roll_no, name, email, course):
+    if not roll_no or not name or not email or not course:
+        raise InvalidInputException("All fields are required and cannot be empty!")
+    if not name.replace(" ", "").isalpha():
+        raise InvalidInputException("Name should contain only alphabets!")
+    validate_email(email)
+
+def save_data_to_file(student):
+    """Save Data to File"""
+    students = []
+    if os.path.exists(DATA_FILE):
+        try:
+            with open(DATA_FILE, 'r') as f:
+                students = json.load(f)
+        except (json.JSONDecodeError, FileNotFoundError):
+            students = []
+
+    students.append(student.to_dict())
+
+    with open(DATA_FILE, 'w') as f:
+        json.dump(students, f, indent=4)
+    print(f"Student {student.name} saved successfully!")
+
+def add_student():
+    """Add Student with exception handling"""
+    try:
+        print("\n--- Add Student ---")
+        roll_no = input("Enter Roll No: ").strip()
+        name = input("Enter Name: ").strip()
+        email = input("Enter Email: ").strip()
+        course = input("Enter Course: ").strip()
+
+        validate_input(roll_no, name, email, course)
+
+        student = Student(roll_no, name, email, course)
+        save_data_to_file(student)
+
+    except InvalidEmailException as e:
+        print(f"[Error] Email Validation Failed: {e}")
+    except InvalidInputException as e:
+        print(f"[Error] Invalid Input: {e}")
+    except Exception as e:
+        print(f"[Error] Something went wrong: {e}")
